@@ -1,4 +1,165 @@
 ------------------------------------------------------------------------
+r217161 | rniwa@webkit.org | 2017-05-20 06:42:43 +0800 (六, 20  5月 2017) | 19 lines
+
+REGRESSION(r217118): Speedometer 2.0: Flight.js test is broken
+https://bugs.webkit.org/show_bug.cgi?id=172394
+
+Reviewed by Chris Dumez.
+
+PerformanceTests:
+
+Fixed the bug that we were never clearing window.checkLoadedTimeoutId.
+
+* Speedometer/resources/todomvc/dependency-examples/flight/flight/node_modules/requirejs/require.js:
+(newContext.checkLoaded):
+
+Websites/browserbench.org:
+
+Merge the fix.
+
+* Speedometer2.0/resources/todomvc/dependency-examples/flight/flight/node_modules/requirejs/require.js:
+(newContext.checkLoaded):
+
+------------------------------------------------------------------------
+r217121 | rniwa@webkit.org | 2017-05-19 18:50:38 +0800 (五, 19  5月 2017) | 10 lines
+
+Speedometer 2.0: Angular v1 test only deletes the second item
+https://bugs.webkit.org/show_bug.cgi?id=172353
+
+Reviewed by Antti Koivisto.
+
+Like jQuery and Inferno, run querySelector after removing each todo item.
+
+* Speedometer/InteractiveRunner.html: Tweaked CSS again.
+* Speedometer/resources/tests.js:
+
+------------------------------------------------------------------------
+r217119 | rniwa@webkit.org | 2017-05-19 18:09:13 +0800 (五, 19  5月 2017) | 18 lines
+
+Speedometer 2.0: Elem test isn't updating DOM during the measurement
+https://bugs.webkit.org/show_bug.cgi?id=172343
+
+Reviewed by Antti Koivisto.
+
+Elem test wasn't doing much work because it simply enqueues items into the work queue, which doesn't get
+executed until the next requestAnimationFrame or setTimeout callback happens.
+
+Expose elm's work function as contentWindow.elemWork and make the first use of rAF a synchronous callback
+just as it would when requestAnimationFrame isn't defined, and make the second use of rAF queue up to
+an array of callbacks, and have the test runner manually invoke each callback.
+
+This increases the runtime of the Elm suite from 100ms to 300ms on Safari.
+
+* Speedometer/resources/tests.js:
+(processElmWorkQueue): Added. A helper which processes Elm's work queue and manually invokes render callbacks.
+* Speedometer/resources/todomvc/functional-prog-examples/elm/dist/elm.js:
+
+------------------------------------------------------------------------
+r217118 | rniwa@webkit.org | 2017-05-19 18:05:13 +0800 (五, 19  5月 2017) | 19 lines
+
+Speedometer 2.0: Flight.js test is sometime broken
+https://bugs.webkit.org/show_bug.cgi?id=172347
+
+Reviewed by Antti Koivisto.
+
+The bug was caused by the test runner only waiting for #new-todo, which happens before all other states are
+updated in the Flight.js dependency example. As done in Speedometer v1, insert a dummy element with id set
+to appIsReady and wait for this element to appear in the benchmark harness.
+
+* Speedometer/resources/tests.js: Wait for #appIsReady.
+* Speedometer/resources/todomvc/dependency-examples/flight/flight/app/js/main.js: Removed the superflous call
+to console.log.
+(checkReady): Added. Insert #appIsReady if checkLoaded is no longer running at 50ms interval. Because this
+could happen asynchronously, we check the absense of checkLoadedTimeoutId Ωevery 10ms for 5 times for
+the total duration of 50ms. If checkLoadedTimeoutId was never present, we call it ready. If we ever observed
+the presence of checkLoadedTimeoutId, wait another 50ms and start over.
+* Speedometer/resources/todomvc/dependency-examples/flight/flight/node_modules/requirejs/require.js:
+(.newContext.checkLoaded): Expose checkLoadedTimeoutId which is a timer ID used to check the dependency.
+
+------------------------------------------------------------------------
+r217112 | rniwa@webkit.org | 2017-05-19 17:43:40 +0800 (五, 19  5月 2017) | 24 lines
+
+Speedometer 2.0: jQuery and Inferno tests don't delete all ToDo items
+https://bugs.webkit.org/show_bug.cgi?id=172341
+
+Reviewed by Antti Koivisto.
+
+The bug was caused by the fact TodoMVC examples for jQuery and Inferno JS create a new button
+to delete the todo item each time todo items are rendered.
+
+Fixed the bug by dynamically look for .destroy using querySelector for each item.
+
+Also moved the deletion of the iframe from the end of each test suite to the beginning of each suite.
+This will make debugging the issue like this easier on InteractiveRunner.html since the iframe
+will stick around after stepping the last item in the suite.
+
+* Speedometer/InteractiveRunner.html: Tweaked the CSS to make buttons to "Step" and "Run" always visible
+even if the list of suites and subtests are too long to fit in the viewport.
+
+* Speedometer/resources/benchmark-runner.js:
+(BenchmarkRunner.prototype.step):
+(BenchmarkRunner.prototype._runTestAndRecordResults):
+
+* Speedometer/resources/tests.js: Fixed the bug for jQuery and Inferno. In the case of jQuery
+we also have to fix the code for checking every ToDo item as completed as well.
+
+------------------------------------------------------------------------
+r217107 | rniwa@webkit.org | 2017-05-19 17:19:01 +0800 (五, 19  5月 2017) | 13 lines
+
+Speedometer 2.0: Vanilla JS test doesn't mark all todo items as completed
+https://bugs.webkit.org/show_bug.cgi?id=172348
+
+Reviewed by Antti Koivisto.
+
+The bug was caused by the in-memory store class using the milisecond precision timestamp as an ID.
+Because we inserts 50 items all at once, this can result in multiple data items sharing a single ID.
+
+Fixed the bug by using a mononotically increasing ID instead.
+
+* Speedometer/resources/todomvc/vanilla-examples/vanillajs/js/store.js:
+(Store.prototype.save):
+
+------------------------------------------------------------------------
+r217089 | rniwa@webkit.org | 2017-05-19 11:05:07 +0800 (五, 19  5月 2017) | 25 lines
+
+REGRESSION (r216694 - 216712): Performance test Speedometer/Full.html is failing
+https://bugs.webkit.org/show_bug.cgi?id=172077
+
+Reviewed by Chris Dumez.
+
+PerformanceTests:
+
+Rename Full.html to index.html to match the convention of other benchmarks.
+
+* Speedometer/index.html: Renamed from PerformanceTests/Speedometer/Full.html.
+
+Tools:
+
+Fixed perftest.py by updating the lines to ignore in Speedometer.
+
+Also start report the results as "Speedometer" instead of "DoYouEvenBench/Full.html" to perf.webkit.org.
+
+* Scripts/webkitpy/performance_tests/perftest.py:
+(PerfTest._lines_to_ignore_in_parser_result): Updated for Speedometer 2.0.
+* Scripts/webkitpy/performance_tests/perftestsrunner.py:
+(PerfTestsRunner._collect_tests): Use "Speedometer" instead of "Speedometer/index.html" as the test name.
+(_generate_results_dict): Removed the workaround to keep reporting Speedometer as DoYouEvenBench.
+* Scripts/webkitpy/performance_tests/perftestsrunner_unittest.py:
+(MainTest.test_collect_tests_with_index_html_and_resources): Added.
+
+------------------------------------------------------------------------
+r217088 | rniwa@webkit.org | 2017-05-19 11:03:55 +0800 (五, 19  5月 2017) | 9 lines
+
+Speedometer: check-in missing React TodoMVC dependency
+https://bugs.webkit.org/show_bug.cgi?id=172213
+
+Patch by Addy Osmani <addyosmani@gmail.com> on 2017-05-18
+Reviewed by Ryosuke Niwa.
+
+* Speedometer/resources/todomvc/architecture-examples/react/index.html: fix director.min.js path.
+* Speedometer/resources/todomvc/architecture-examples/react/node_modules/director/director.min.js: Added.
+
+------------------------------------------------------------------------
 r216996 | rniwa@webkit.org | 2017-05-18 04:52:39 +0800 (四, 18  5月 2017) | 8 lines
 
 Speedometer: adjust Ember TodoMVC to use full path
