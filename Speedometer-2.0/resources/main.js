@@ -2,7 +2,9 @@ window.benchmarkClient = {
     iterationCount: 20,
     testsCount: null,
     suitesCount: null,
+    autoRun: false,
     _timeValues: [],
+    _suitsTimeValues: [],
     _finishedTestCount: 0,
     _progressCompleted: null,
     willAddTestFrame: function (frame) {
@@ -20,9 +22,16 @@ window.benchmarkClient = {
     },
     didRunSuites: function (measuredValues) {
         this._timeValues.push(measuredValues.total);
+        for (var suit in measuredValues.tests) {
+            if (!this._suitsTimeValues[suit])
+                this._suitsTimeValues[suit] = [ measuredValues.tests[suit].total ];
+            else
+                this._suitsTimeValues[suit].push(measuredValues.tests[suit].total);
+        }
     },
     willStartFirstIteration: function () {
         this._timeValues = [];
+        this._suitsTimeValues = [];
         this._finishedTestCount = 0;
         this._progressCompleted = document.getElementById('progress-completed');
         document.getElementById('logo-link').onclick = function (event) { event.preventDefault(); return false; }
@@ -33,12 +42,22 @@ window.benchmarkClient = {
         var displayUnit = location.search == '?ms' || location.hash == '#ms' ? 'ms' : 'runs/min';
         var results = this._computeResults(this._timeValues, displayUnit);
 
+        var scoreFactor = displayUnit == 'ms' ? 1 : benchmarkClient.suitesCount;
+        var suitsResults = [];
+        var suitsScores = [];
+        for (var suit in this._suitsTimeValues) {
+            suitsResults[suit] = this._computeResults(this._suitsTimeValues[suit], displayUnit);
+            suitsScores[suit] = (suitsResults[suit].mean / scoreFactor).toFixed(2);
+            console.log(suit + "," + suitsScores[suit]);
+        }
+
         this._updateGaugeNeedle(results.mean);
+        console.log("Arithmetic-Mean," + results.mean.toFixed(2));
         document.getElementById('result-number').textContent = results.formattedMean;
         if (results.formattedDelta)
             document.getElementById('confidence-number').textContent = '\u00b1 ' + results.formattedDelta;
 
-        this._populateDetailedResults(results.formattedValues);
+        this._populateDetailedResults(results.formattedValues, suitsScores);
         document.getElementById('results-with-statistics').textContent = results.formattedMeanAndDelta;
 
         if (displayUnit == 'ms') {
@@ -92,6 +111,14 @@ window.benchmarkClient = {
             formattedMeanAndDelta: formattedMean + (formattedDelta ? ' \xb1 ' + formattedDelta + ' (' + formattedPercentDelta + ')' : ''),
         };
     },
+    _addFrameworksRow: function (table, name, cb) {
+        var row = document.createElement('tr');
+        var th = document.createElement('th');
+        th.textContent = name;
+        row.appendChild(th);
+        row.appendChild(cb);
+        table.appendChild(row);
+    },
     _addDetailedResultsRow: function (table, iterationNumber, value) {
         var row = document.createElement('tr');
         var th = document.createElement('th');
@@ -101,6 +128,42 @@ window.benchmarkClient = {
         row.appendChild(th);
         row.appendChild(td);
         table.appendChild(row);
+    },
+    _addSuitsScoresRow: function (table, suit, value) {
+        var row = document.createElement('tr');
+        var th = document.createElement('th');
+        th.textContent = suit;
+        var td = document.createElement('td');
+        td.textContent = value;
+        row.appendChild(th);
+        row.appendChild(td);
+        table.appendChild(row);
+    },
+    _prepareFrameworks: function () {
+        var args = location.search.substr(1).split(':');
+        if (args[0] == "auto") {
+            this.autoRun = true;
+            args.shift();
+        }
+        var singleFramework = '';
+        for (var i = 0; i < Suites.length; i++) {
+            if (args[0] == Suites[i].name) {
+                singleFramework = Suites[i].name;
+                args.shift();
+                break;
+            }
+        }
+        var frameworksTables = document.querySelectorAll('.frameworks-table');
+        frameworksTables[0].innerHTML = '';
+        for (var i = 0; i < Suites.length; i++) {
+            Suites[i].checkbox = document.createElement("INPUT");
+            Suites[i].checkbox.setAttribute("type", "checkbox");
+            if (singleFramework)
+                Suites[i].checkbox.checked = singleFramework == Suites[i].name ? true : false;
+            else
+                Suites[i].checkbox.checked = !Suites[i].disabled;
+            this._addFrameworksRow(frameworksTables[0], Suites[i].name, Suites[i].checkbox);
+        }
     },
     _updateGaugeNeedle: function (rpm) {
         var needleAngle = Math.max(0, Math.min(rpm, 140)) - 70;
@@ -112,17 +175,17 @@ window.benchmarkClient = {
         gaugeNeedleElement.style.setProperty('-ms-transform', needleRotationValue);
         gaugeNeedleElement.style.setProperty('transform', needleRotationValue);
     },
-    _populateDetailedResults: function (formattedValues) {
+    _populateDetailedResults: function (formattedValues, suitsScores) {
         var resultsTables = document.querySelectorAll('.results-table');
-        var i = 0;
         resultsTables[0].innerHTML = '';
-        for (; i < Math.ceil(formattedValues.length / 2); i++)
+        for (var i = 0; i < formattedValues.length; i++)
             this._addDetailedResultsRow(resultsTables[0], i, formattedValues[i]);
         resultsTables[1].innerHTML = '';
-        for (; i < formattedValues.length; i++)
-            this._addDetailedResultsRow(resultsTables[1], i, formattedValues[i]);
+        for (var suit in suitsScores)
+            this._addSuitsScoresRow(resultsTables[1], suit, suitsScores[suit]);
     },
     prepareUI: function () {
+        this._prepareFrameworks();
         window.addEventListener('popstate', function (event) {
             if (event.state) {
                 var sectionToShow = event.state.section;
@@ -150,6 +213,8 @@ window.benchmarkClient = {
 }
 
 function startBenchmark() {
+    for (var i = 0; i < Suites.length; i++)
+        Suites[i].disabled = !Suites[i].checkbox.checked;
     var enabledSuites = Suites.filter(function (suite) { return !suite.disabled });
     var totalSubtestCount = enabledSuites.reduce(function (testsCount, suite) { return testsCount + suite.tests.length; }, 0);
     benchmarkClient.testsCount = benchmarkClient.iterationCount * totalSubtestCount;
@@ -193,6 +258,20 @@ function showResultDetails() {
     showSection('detailed-results', true);
 }
 
+function showFrameworks() {
+    showSection('frameworks', true);
+}
+
+function defaultFrameworks() {
+    for (var i = 0; i < Suites.length; i++)
+        Suites[i].checkbox.checked = Suites[i].name == "FlightJS-MailClient" ? false : true;
+}
+
+function clearFrameworks() {
+    for (var i = 0; i < Suites.length; i++)
+        Suites[i].checkbox.checked = false;
+}
+
 function showAbout() {
     showSection('about', true);
 }
@@ -200,4 +279,6 @@ function showAbout() {
 window.addEventListener('DOMContentLoaded', function () {
     if (benchmarkClient.prepareUI)
         benchmarkClient.prepareUI();
+    if (benchmarkClient.autoRun)
+        startTest();
 });
