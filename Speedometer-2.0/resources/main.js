@@ -41,24 +41,28 @@ window.benchmarkClient = {
 
         var displayUnit = location.search == '?ms' || location.hash == '#ms' ? 'ms' : 'runs/min';
         var results = this._computeResults(this._timeValues, displayUnit);
-
-        var scoreFactor = displayUnit == 'ms' ? 1 : benchmarkClient.suitesCount;
         var suitsResults = [];
         var suitsScores = [];
+        var suitsTimes = [];
         for (var suit in this._suitsTimeValues) {
-            suitsResults[suit] = this._computeResults(this._suitsTimeValues[suit], displayUnit);
-            suitsScores[suit] = (suitsResults[suit].mean / scoreFactor).toFixed(2);
-            console.log(suit + "," + suitsScores[suit]);
+            suitsResults[suit] = this._computeResults(this._suitsTimeValues[suit], 'runs/min');
+            suitsScores[suit] = (suitsResults[suit].mean / benchmarkClient.suitesCount).toFixed(2);
+            suitsTimes[suit] = suitsResults[suit].totalTime.toFixed(2);
+            console.log(suit + "," + suitsScores[suit] + ",Time(ms)," + suitsTimes[suit]);
         }
 
+        running_end = performance.now();
+        var running_time = running_end - running_start;
         this._updateGaugeNeedle(results.mean);
-        console.log("Arithmetic-Mean," + results.mean.toFixed(2));
+        console.log("Arithmetic-Mean," + results.mean.toFixed(2) + "Total-Time(ms)," + results.totalTime.toFixed(2));
         document.getElementById('result-number').textContent = results.formattedMean;
         if (results.formattedDelta)
             document.getElementById('confidence-number').textContent = '\u00b1 ' + results.formattedDelta;
 
-        this._populateDetailedResults(results.formattedValues, suitsScores);
+        this._populateDetailedResults(results.formattedValues, suitsScores, suitsTimes);
         document.getElementById('results-with-statistics').textContent = results.formattedMeanAndDelta;
+        document.getElementById('total-score-time').textContent = results.totalTime.toFixed(2);
+        document.getElementById('total-running-time').textContent = running_time.toFixed(2);
 
         if (displayUnit == 'ms') {
             document.getElementById('show-summary').style.display = 'none';
@@ -83,6 +87,7 @@ window.benchmarkClient = {
             return number.toPrecision(Math.max(nonDecimalDigitCount, Math.min(6, sigFig)));
         }
 
+        var totalTime = timeValues.reduce(function (a, b) { return a + b; }, 0);
         var values = timeValues.map(totalTimeInDisplayUnit);
         var sum = values.reduce(function (a, b) { return a + b; }, 0);
         var arithmeticMean = sum / values.length;
@@ -102,6 +107,7 @@ window.benchmarkClient = {
         var formattedMean = toSigFigPrecision(arithmeticMean, Math.max(meanSigFig, 3));
 
         return {
+            totalTime: totalTime,
             formattedValues: timeValues.map(function (time) {
                 return toSigFigPrecision(totalTimeInDisplayUnit(time), 4) + ' ' + displayUnit;
             }),
@@ -129,14 +135,30 @@ window.benchmarkClient = {
         row.appendChild(td);
         table.appendChild(row);
     },
-    _addSuitsScoresRow: function (table, suit, value) {
+    _addSuitsScoresRow: function (table, suit, value, time) {
+        if (table.innerHTML == '') {
+            var row = document.createElement('tr');
+            var th = document.createElement('th');
+            var td1 = document.createElement('td');
+            var td2 = document.createElement('td');
+            th.textContent = "Subcase";
+            td1.textContent = "Score (runs/min)";
+            td2.textContent = "Time (ms)";
+            row.appendChild(th);
+            row.appendChild(td1);
+            row.appendChild(td2);
+            table.appendChild(row);
+        }
         var row = document.createElement('tr');
         var th = document.createElement('th');
+        var td1 = document.createElement('td');
+        var td2 = document.createElement('td');
         th.textContent = suit;
-        var td = document.createElement('td');
-        td.textContent = value;
+        td1.textContent = value;
+        td2.textContent = time;
         row.appendChild(th);
-        row.appendChild(td);
+        row.appendChild(td1);
+        row.appendChild(td2);
         table.appendChild(row);
     },
     _prepareFrameworks: function () {
@@ -175,14 +197,14 @@ window.benchmarkClient = {
         gaugeNeedleElement.style.setProperty('-ms-transform', needleRotationValue);
         gaugeNeedleElement.style.setProperty('transform', needleRotationValue);
     },
-    _populateDetailedResults: function (formattedValues, suitsScores) {
+    _populateDetailedResults: function (formattedValues, suitsScores, suitsTimes) {
         var resultsTables = document.querySelectorAll('.results-table');
         resultsTables[0].innerHTML = '';
         for (var i = 0; i < formattedValues.length; i++)
             this._addDetailedResultsRow(resultsTables[0], i, formattedValues[i]);
         resultsTables[1].innerHTML = '';
         for (var suit in suitsScores)
-            this._addSuitsScoresRow(resultsTables[1], suit, suitsScores[suit]);
+            this._addSuitsScoresRow(resultsTables[1], suit, suitsScores[suit], suitsTimes[suit]);
     },
     prepareUI: function () {
         this._prepareFrameworks();
@@ -246,6 +268,7 @@ function showHome() {
 }
 
 function startTest() {
+    running_start = performance.now();
     showSection('running');
     startBenchmark();
 }
