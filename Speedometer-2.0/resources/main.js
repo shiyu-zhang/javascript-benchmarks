@@ -44,12 +44,15 @@ window.benchmarkClient = {
         var suitsResults = [];
         var suitsScores = [];
         var suitsTimes = [];
+        var geomeanScore = 1.0;
         for (var suit in this._suitsTimeValues) {
             suitsResults[suit] = this._computeResults(this._suitsTimeValues[suit], 'runs/min');
             suitsScores[suit] = (suitsResults[suit].mean / benchmarkClient.suitesCount).toFixed(2);
             suitsTimes[suit] = suitsResults[suit].totalTime.toFixed(2);
             console.log(suit + "," + suitsScores[suit] + ",Time(ms)," + suitsTimes[suit]);
+            geomeanScore *= suitsScores[suit];
         }
+        geomeanScore = Math.pow(geomeanScore, 1.0/benchmarkClient.suitesCount);
 
         running_end = performance.now();
         var running_time = running_end - running_start;
@@ -63,6 +66,7 @@ window.benchmarkClient = {
         document.getElementById('results-with-statistics').textContent = results.formattedMeanAndDelta;
         document.getElementById('total-score-time').textContent = results.totalTime.toFixed(2);
         document.getElementById('total-running-time').textContent = running_time.toFixed(2);
+        document.getElementById('geomean-score').textContent = geomeanScore.toFixed(2);
 
         if (displayUnit == 'ms') {
             document.getElementById('show-summary').style.display = 'none';
