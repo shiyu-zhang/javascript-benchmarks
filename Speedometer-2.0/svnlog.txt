@@ -1,4 +1,55 @@
 ------------------------------------------------------------------------
+r220950 | rniwa@webkit.org | 2017-08-19 11:05:57 +0800 (六, 19  8月 2017) | 19 lines
+
+REGRESSION(r219640): Speedometer no longer runs on Safari 7
+https://bugs.webkit.org/show_bug.cgi?id=175749
+
+Reviewed by Joseph Pecoraro.
+
+PerformanceTests:
+
+Use regular string instead of template literal to make the script compatible with older versions of Safari.
+
+* Speedometer/resources/benchmark-runner.js:
+(BenchmarkRunner.prototype._runTest):
+
+Websites/browserbench.org:
+
+Fix the bug on browserbench.org.
+
+* Speedometer/resources/benchmark-runner.js:
+(BenchmarkRunner.prototype._runTest):
+
+------------------------------------------------------------------------
+r220900 | commit-queue@webkit.org | 2017-08-18 12:03:24 +0800 (五, 18  8月 2017) | 12 lines
+
+Speedometer: Update to modern Vue.js version
+https://bugs.webkit.org/show_bug.cgi?id=175660
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-08-17
+Reviewed by Ryosuke Niwa.
+
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/README.md: Documented build process.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/config/index.js: Forced relative URLs to avoid breaking the interactive runner.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/dist/*: Updated per build steps.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/package-lock.json: Added to pin dependencies and make builds deterministic.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/package.json: Update to modern Vue.js version.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/src/components/Todos.vue: Fix markup error.
+------------------------------------------------------------------------
+r220899 | commit-queue@webkit.org | 2017-08-18 11:51:17 +0800 (五, 18  8月 2017) | 11 lines
+
+Speedometer: Update to modern React/Redux version
+https://bugs.webkit.org/show_bug.cgi?id=175669
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-08-17
+Reviewed by Ryosuke Niwa.
+
+* Speedometer/resources/todomvc/architecture-examples/react-redux/README.md: Documented build steps.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/*: Updated per build instructions.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/package-lock.json: Pinned dependencies to make builds deterministic.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/package.json: Fixed build command.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/public/index.html: Made title consistent.
+------------------------------------------------------------------------
 r220801 | commit-queue@webkit.org | 2017-08-17 03:17:33 +0800 (四, 17  8月 2017) | 18 lines
 
 Speedometer: Update Angular 1 TodoMVC example to v1.6.5
