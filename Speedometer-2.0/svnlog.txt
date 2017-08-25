@@ -1,4 +1,198 @@
 ------------------------------------------------------------------------
+r221129 | rniwa@webkit.org | 2017-08-24 14:13:42 +0800 (四, 24  8月 2017) | 7 lines
+
+Speedometer: Add missing stylesheet to Angular example
+​https://bugs.webkit.org/show_bug.cgi?id=175820
+
+Fix r221042. It was supposed to add an empty file but git-svn failed to do so.
+
+* Speedometer/resources/todomvc/architecture-examples/angular/dist/styles.d41d8cd98f00b204e980.bundle.css: Added.
+
+------------------------------------------------------------------------
+r221121 | commit-queue@webkit.org | 2017-08-24 08:14:55 +0800 (四, 24  8月 2017) | 16 lines
+
+Speedometer: Update to modern Preact version
+https://bugs.webkit.org/show_bug.cgi?id=175763
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-08-23
+Reviewed by Ryosuke Niwa.
+
+* Speedometer/resources/todomvc/architecture-examples/preact/README.md: Documented build steps.
+* Speedometer/resources/todomvc/architecture-examples/preact/dist/*: Renamed from build to dist so it can be checked in, and updated per build steps.
+* Speedometer/resources/todomvc/architecture-examples/preact/package-lock.json: Locked dependencies to ensure builds are deterministic.
+* Speedometer/resources/todomvc/architecture-examples/preact/package.json: Updated build commands and dependencies.
+* Speedometer/resources/todomvc/architecture-examples/preact/rollup.config.js: Updated configuration.
+* Speedometer/resources/todomvc/architecture-examples/preact/src/app/footer.js: Updated to modern Preact version.
+* Speedometer/resources/todomvc/architecture-examples/preact/src/app/index.js: Updated to modern Preact version.
+* Speedometer/resources/todomvc/architecture-examples/preact/src/app/util.js: Updated to modern Preact version.
+* Speedometer/resources/todomvc/architecture-examples/preact/src/index.html: Made title consistent.
+* Speedometer/resources/todomvc/architecture-examples/preact/webpack.config.babel.js: Updated configuration.
+------------------------------------------------------------------------
+r221118 | rniwa@webkit.org | 2017-08-24 07:54:40 +0800 (四, 24  8月 2017) | 9 lines
+
+Speedometer 2.0: Add the capability to run a specific suite
+https://bugs.webkit.org/show_bug.cgi?id=175908
+
+Address Joe's review comments.
+
+* Speedometer/resources/main.js:
+(startBenchmark):
+
+
+------------------------------------------------------------------------
+r221114 | rniwa@webkit.org | 2017-08-24 07:04:13 +0800 (四, 24  8月 2017) | 12 lines
+
+Speedometer 2.0: Add the capability to run a specific suite
+https://bugs.webkit.org/show_bug.cgi?id=175908
+
+Reviewed by Saam Barati.
+
+Added ?suite=X query parameter to specify a specific suite (e.g. React-TodoMVC) to run.
+
+* Speedometer/resources/main.js:
+(enableOneSuite): Added.
+(startBenchmark): Return true if the benchmark actually had started running.
+(startTest): Don't transition to the "running" state if the benchmark failed to start (e.g. no tests to run).
+
+------------------------------------------------------------------------
+r221106 | rniwa@webkit.org | 2017-08-24 05:40:41 +0800 (四, 24  8月 2017) | 28 lines
+
+Speedometer 2.0: Async time is not always capturing layout time
+https://bugs.webkit.org/show_bug.cgi?id=175871
+
+Reviewed by Simon Fraser.
+
+Speedometer harness was designed to capture the time browser engine spends relayouting and repainting the content
+after DOM mutations this in its async time measurement, which is the time between each test case's code had finished
+running and when a newly scheduled 0s timer is fired immediately afterwards.
+
+It turns out that modern web browsers defer this reflow and repaint work until the next animation frame is requested.
+This results in Speedometer harness measuring reflow and repaint cost only sometimes depending on when each test case
+had finished running relative to the next frame request.
+
+While such a behavior makes sense and might be desirable for a modern browser engine, we would like to capture it in
+the async time for the purpose of Speedometer. Unfortunately, there isn't an interoperable API for browsers to report
+the total layout and repaint time, and relying on 16ms-granularity requestAnimationFrame is too coarse for Speedometer.
+
+This patch works around these limitations by manually forcing the layout in async time measurement by calling
+getBoundingClientRect() in iframe's document. Since the height of the document depends on the number of todo items,
+this should cause browser engines to do most if not all of the work needed to reflow the document at least for now.
+
+Note that even new async time doesn't always capture painting time but there isn't a good cross-browser mechanism
+to measure paint time in the granurality we need for Speedometer at the moment anyway. (Should such a mechanism exist,
+that could be a huge timing attack surface so it's probably best that we don't have one.)
+
+* Speedometer/resources/benchmark-runner.js:
+(BenchmarkRunner.prototype._runTest):
+
+------------------------------------------------------------------------
+r221105 | rniwa@webkit.org | 2017-08-24 05:39:28 +0800 (四, 24  8月 2017) | 19 lines
+
+Speedometer: Make React/Redux item order consistent
+https://bugs.webkit.org/show_bug.cgi?id=175818
+
+Reviewed by Joseph Pecoraro.
+
+Based on the patch made by Mathias Bynens. Re-generated project files.
+
+Also tweaked the instruction in package.json so that newly generated files in build/* replace dist/* instead of
+being moved under dist/build/ by rm -rf'ing dist directory first.
+
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/index.html:
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/static/js/main.43a0948c.js: Removed.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/static/js/main.43a0948c.js.map: Removed.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/static/js/main.69cd9655.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/static/js/main.69cd9655.js.map: Added.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/package.json:
+* Speedometer/resources/todomvc/architecture-examples/react-redux/src/reducers/todos.js: Forced new items to be appended rather than prepended.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/yarn.lock: Removed unnecessary file.
+
+------------------------------------------------------------------------
+r221104 | commit-queue@webkit.org | 2017-08-24 05:37:45 +0800 (四, 24  8月 2017) | 15 lines
+
+Speedometer: Update to modern React version
+https://bugs.webkit.org/show_bug.cgi?id=175715
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-08-23
+Reviewed by Ryosuke Niwa.
+
+This patch pins React and react-dom to v15.5.4 (released in May 2017).
+
+* Speedometer/resources/todomvc/architecture-examples/react/README.md: Documented build steps.
+* Speedometer/resources/todomvc/architecture-examples/react/index.html: Made title consistent.
+* Speedometer/resources/todomvc/architecture-examples/react/node_modules/*: Remove unneeded files and update per build instructions.
+* Speedometer/resources/todomvc/architecture-examples/react/npm-shrinkwrap.json: Removed in favor of package-lock.json.
+* Speedometer/resources/todomvc/architecture-examples/react/package-lock.json: Pinned dependencies to make build deterministic.
+* Speedometer/resources/todomvc/architecture-examples/react/package.json: Update dependencies.
+* Speedometer/resources/todomvc/architecture-examples/react/yarn.lock: Removed in favor of package-lock.json.
+------------------------------------------------------------------------
+r221054 | rniwa@webkit.org | 2017-08-23 07:11:05 +0800 (三, 23  8月 2017) | 24 lines
+
+REGRESSION(R220043): Speedometer 2.0: Fix vanilla JS examples
+https://bugs.webkit.org/show_bug.cgi?id=175815
+
+Reviewed by Saam Barati.
+
+Both vanilla ES2015 and Babel + WebPack test cases were failing to mark Todo items as completed since they were relying on
+`new Date().getTime()` to generate an unique ID. That's not going to work if mulitple todo items are added within 1ms.
+
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.app.71bb1f671e4e65604d05.js: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.app.71bb1f671e4e65604d05.js.map: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.app.9debb1b0a94f14d0ebe9.js: Removed.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.app.9debb1b0a94f14d0ebe9.js.map: Removed.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.manifest.2102040c9a6e04cc046e.js: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.manifest.2102040c9a6e04cc046e.js.map: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.vendor.b16cc08e016d07886f5f.js: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/bundle.vendor.b16cc08e016d07886f5f.js.map: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/index.html:
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/styles.app.71bb1f671e4e65604d05.css: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/styles.app.71bb1f671e4e65604d05.css.map: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/styles.vendor.b16cc08e016d07886f5f.css: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/dist/styles.vendor.b16cc08e016d07886f5f.css.map: Added.
+* Speedometer/resources/todomvc/vanilla-examples/es2015-babel-webpack/src/store.js:
+* Speedometer/resources/todomvc/vanilla-examples/es2015/src/store.js:
+
+------------------------------------------------------------------------
+r221045 | rniwa@webkit.org | 2017-08-23 05:03:53 +0800 (三, 23  8月 2017) | 6 lines
+
+Commit the change meant to be included in the previous commit.
+
+* Speedometer/resources/main.js:
+(startBenchmark):
+
+
+------------------------------------------------------------------------
+r221044 | rniwa@webkit.org | 2017-08-23 05:00:49 +0800 (三, 23  8月 2017) | 15 lines
+
+Speedometer 2.0: Make it possible to change the iteration count via query string
+https://bugs.webkit.org/show_bug.cgi?id=175811
+
+Reviewed by Saam Barati.
+
+Added the support for specifying the iteration count by "iterationCount" query parameter, and replaced "ms"
+query parameter by "unit=ms".
+
+Finally, reduced the number of iterations from 20 to 10 to reduce the time needed to run the benchmark
+since Speedometer 2.0 contains more than twice the number of libraries and frameworks than Speedometer 1.0.
+
+* Speedometer/resources/main.js:
+(window.benchmarkClient.didFinishLastIteration):
+(startBenchmark):
+
+------------------------------------------------------------------------
+r221039 | rniwa@webkit.org | 2017-08-23 04:42:23 +0800 (三, 23  8月 2017) | 10 lines
+
+Speedometer 2.0: Add button to select and unselect all tests to InteractiveRunner.html
+https://bugs.webkit.org/show_bug.cgi?id=175816
+
+Reviewed by Saam Barati.
+
+Added buttons to select and unselect all subtests to aid debugging.
+
+* Speedometer/InteractiveRunner.html:
+(createUIForSuites):
+
+------------------------------------------------------------------------
 r220950 | rniwa@webkit.org | 2017-08-19 11:05:57 +0800 (六, 19  8月 2017) | 19 lines
 
 REGRESSION(r219640): Speedometer no longer runs on Safari 7

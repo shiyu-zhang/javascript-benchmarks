@@ -1,5 +1,6 @@
 window.benchmarkClient = {
-    iterationCount: 20,
+    displayUnit: 'runs/min',
+    iterationCount: 10,
     testsCount: null,
     suitesCount: null,
     autoRun: false,
@@ -39,8 +40,7 @@ window.benchmarkClient = {
     didFinishLastIteration: function () {
         document.getElementById('logo-link').onclick = null;
 
-        var displayUnit = location.search == '?ms' || location.hash == '#ms' ? 'ms' : 'runs/min';
-        var results = this._computeResults(this._timeValues, displayUnit);
+        var results = this._computeResults(this._timeValues, this.displayUnit);
         var suitsResults = [];
         var suitsScores = [];
         var suitsTimes = [];
@@ -68,7 +68,7 @@ window.benchmarkClient = {
         document.getElementById('total-running-time').textContent = running_time.toFixed(2);
         document.getElementById('geomean-score').textContent = geomeanScore.toFixed(2);
 
-        if (displayUnit == 'ms') {
+        if (this.displayUnit == 'ms') {
             document.getElementById('show-summary').style.display = 'none';
             showResultDetails();
         } else
@@ -238,15 +238,63 @@ window.benchmarkClient = {
     }
 }
 
+function enableOneSuite(suites, suiteToEnable)
+{
+    suiteToEnable = suiteToEnable.toLowerCase();
+    var found = false;
+    for (var i = 0; i < suites.length; i++) {
+        var currentSuite = suites[i];
+        if (currentSuite.name.toLowerCase() == suiteToEnable) {
+            currentSuite.disabled = false;
+            found = true;
+        } else
+            currentSuite.disabled = true;
+    }
+    return found;
+}
+
 function startBenchmark() {
     for (var i = 0; i < Suites.length; i++)
         Suites[i].disabled = !Suites[i].checkbox.checked;
-    var enabledSuites = Suites.filter(function (suite) { return !suite.disabled });
+
+    if (location.search.length > 1) {
+        var parts = location.search.substring(1).split('&');
+        for (var i = 0; i < parts.length; i++) {
+            var keyValue = parts[i].split('=');
+            var key = keyValue[0];
+            var value = keyValue[1];
+            switch (key) {
+            case 'unit':
+                if (value == 'ms')
+                    benchmarkClient.displayUnit = 'ms';
+                else
+                    console.error('Invalid unit: ' + value);
+                break;
+            case 'iterationCount':
+                var parsedValue = parseInt(value);
+                if (!isNaN(parsedValue))
+                    benchmarkClient.iterationCount = parsedValue;
+                else
+                    console.error('Invalid iteration count: ' + value);
+                break;
+            case 'suite':
+                if (!enableOneSuite(Suites, value)) {
+                    alert('Suite "' + value + '" does not exist. No tests to run.');
+                    return false;
+                }
+                break;
+            }
+        }
+    }
+
+    var enabledSuites = Suites.filter(function (suite) { return !suite.disabled; });
     var totalSubtestCount = enabledSuites.reduce(function (testsCount, suite) { return testsCount + suite.tests.length; }, 0);
     benchmarkClient.testsCount = benchmarkClient.iterationCount * totalSubtestCount;
     benchmarkClient.suitesCount = enabledSuites.length;
     var runner = new BenchmarkRunner(Suites, benchmarkClient);
     runner.runMultipleIterations(benchmarkClient.iterationCount);
+
+    return true;
 }
 
 function computeScore(time) {
@@ -273,8 +321,8 @@ function showHome() {
 
 function startTest() {
     running_start = performance.now();
-    showSection('running');
-    startBenchmark();
+    if (startBenchmark())
+        showSection('running');
 }
 
 function showResultsSummary() {
