@@ -166,26 +166,33 @@ window.benchmarkClient = {
         table.appendChild(row);
     },
     _prepareFrameworks: function () {
-        var args = location.search.substr(1).split(':');
-        if (args[0] == "auto") {
-            this.autoRun = true;
-            args.shift();
-        }
-        var singleFramework = '';
-        for (var i = 0; i < Suites.length; i++) {
-            if (args[0] == Suites[i].name) {
-                singleFramework = Suites[i].name;
-                args.shift();
-                break;
+        var singleSuiteRun = '';
+        if (location.search.length > 1) {
+            var parts = location.search.substring(1).split('&');
+            for (var i = 0; i < parts.length; i++) {
+                var keyValue = parts[i].split('=');
+                var key = keyValue[0];
+                var value = keyValue[1];
+                switch (key) {
+                case 'auto':
+                    if (value == '1')
+                        this.autoRun = true;
+                    break;
+                case 'suite':
+                    if (enableOneSuite(Suites, value))
+                        singleSuiteRun = value.toLowerCase();
+                    break;
+                }
             }
         }
+
         var frameworksTables = document.querySelectorAll('.frameworks-table');
         frameworksTables[0].innerHTML = '';
         for (var i = 0; i < Suites.length; i++) {
             Suites[i].checkbox = document.createElement("INPUT");
             Suites[i].checkbox.setAttribute("type", "checkbox");
-            if (singleFramework)
-                Suites[i].checkbox.checked = singleFramework == Suites[i].name ? true : false;
+            if (singleSuiteRun)
+                Suites[i].checkbox.checked = singleSuiteRun == Suites[i].name.toLowerCase() ? true : false;
             else
                 Suites[i].checkbox.checked = !Suites[i].disabled;
             this._addFrameworksRow(frameworksTables[0], Suites[i].name, Suites[i].checkbox);
