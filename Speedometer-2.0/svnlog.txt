@@ -1,4 +1,33 @@
 ------------------------------------------------------------------------
+r221611 | commit-queue@webkit.org | 2017-09-05 16:17:25 +0800 (二, 05  9月 2017) | 11 lines
+
+Speedometer 2.0: Add dummy node to notify app is ready for Backbone suite
+https://bugs.webkit.org/show_bug.cgi?id=176142
+
+Patch by Shiyu Zhang <shiyu.zhang@intel.com> on 2017-09-05
+Reviewed by Ryosuke Niwa.
+
+Create a dummy node to notify that app is ready for Backbone suite. It prevents Speedometer injecting items before app.js is loaded.
+
+* Speedometer/resources/tests.js:
+(Suites.push.prepare):
+* Speedometer/resources/todomvc/architecture-examples/backbone/js/app.js:
+------------------------------------------------------------------------
+r221401 | commit-queue@webkit.org | 2017-08-31 06:45:26 +0800 (四, 31  8月 2017) | 12 lines
+
+Speedometer 2.0: jQuery test fails occasionally
+https://bugs.webkit.org/show_bug.cgi?id=176017
+
+Patch by Shiyu Zhang <shiyu.zhang@intel.com> on 2017-08-30
+Reviewed by Ryosuke Niwa.
+
+Create a dummy node to notify that app is ready for jQuery suite. It prevents Speedometer injecting items before app.js is loaded.
+
+* Speedometer/resources/tests.js:
+(Suites.push.prepare):
+* Speedometer/resources/todomvc/architecture-examples/jquery/js/app.js:
+(jQuery.App.init):
+------------------------------------------------------------------------
 r221206 | commit-queue@webkit.org | 2017-08-26 05:59:29 +0800 (六, 26  8月 2017) | 13 lines
 
 Speedometer: Restructure Ember example
