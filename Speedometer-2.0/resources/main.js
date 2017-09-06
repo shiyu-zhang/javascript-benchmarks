@@ -4,7 +4,6 @@ window.benchmarkClient = {
     stepCount: null,
     suitesCount: null,
     autoRun: false,
-    _suitsTimeValues: [],
     _measuredValuesList: [],
     _finishedTestCount: 0,
     _progressCompleted: null,
@@ -23,16 +22,9 @@ window.benchmarkClient = {
     },
     didRunSuites: function (measuredValues) {
         this._measuredValuesList.push(measuredValues);
-        for (var suit in measuredValues.tests) {
-            if (!this._suitsTimeValues[suit])
-                this._suitsTimeValues[suit] = [ measuredValues.tests[suit].total ];
-            else
-                this._suitsTimeValues[suit].push(measuredValues.tests[suit].total);
-        }
     },
     willStartFirstIteration: function () {
         this._measuredValuesList = [];
-        this._suitsTimeValues = [];
         this._finishedTestCount = 0;
         this._progressCompleted = document.getElementById('progress-completed');
         document.getElementById('logo-link').onclick = function (event) { event.preventDefault(); return false; }
@@ -155,7 +147,7 @@ window.benchmarkClient = {
         row.appendChild(td);
         table.appendChild(row);
     },
-    _addSuiteScoresRow: function (table, suit, value, time) {
+    _addSuiteScoresRow: function (table, suite, value, time) {
         if (table.innerHTML == '') {
             var row = document.createElement('tr');
             var th = document.createElement('th');
@@ -173,7 +165,7 @@ window.benchmarkClient = {
         var th = document.createElement('th');
         var td1 = document.createElement('td');
         var td2 = document.createElement('td');
-        th.textContent = suit;
+        th.textContent = suite;
         td1.textContent = value;
         td2.textContent = time;
         row.appendChild(th);
