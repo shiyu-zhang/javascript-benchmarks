@@ -1,11 +1,11 @@
 window.benchmarkClient = {
     displayUnit: 'runs/min',
     iterationCount: 10,
-    testsCount: null,
+    stepCount: null,
     suitesCount: null,
     autoRun: false,
-    _timeValues: [],
     _suitsTimeValues: [],
+    _measuredValuesList: [],
     _finishedTestCount: 0,
     _progressCompleted: null,
     willAddTestFrame: function (frame) {
@@ -15,14 +15,14 @@ window.benchmarkClient = {
         frame.style.top = main.offsetTop + parseInt(style.borderTopWidth) + parseInt(style.paddingTop) + 'px';
     },
     willRunTest: function (suite, test) {
-        document.getElementById('info').textContent = suite.name + ' ( ' + this._finishedTestCount + ' / ' + this.testsCount + ' )';
+        document.getElementById('info').textContent = suite.name + ' ( ' + this._finishedTestCount + ' / ' + this.stepCount + ' )';
     },
     didRunTest: function () {
         this._finishedTestCount++;
-        this._progressCompleted.style.width = (this._finishedTestCount * 100 / this.testsCount) + '%';
+        this._progressCompleted.style.width = (this._finishedTestCount * 100 / this.stepCount) + '%';
     },
     didRunSuites: function (measuredValues) {
-        this._timeValues.push(measuredValues.total);
+        this._measuredValuesList.push(measuredValues);
         for (var suit in measuredValues.tests) {
             if (!this._suitsTimeValues[suit])
                 this._suitsTimeValues[suit] = [ measuredValues.tests[suit].total ];
@@ -31,7 +31,7 @@ window.benchmarkClient = {
         }
     },
     willStartFirstIteration: function () {
-        this._timeValues = [];
+        this._measuredValuesList = [];
         this._suitsTimeValues = [];
         this._finishedTestCount = 0;
         this._progressCompleted = document.getElementById('progress-completed');
@@ -39,20 +39,11 @@ window.benchmarkClient = {
     },
     didFinishLastIteration: function () {
         document.getElementById('logo-link').onclick = null;
-
-        var results = this._computeResults(this._timeValues, this.displayUnit);
-        var suitsResults = [];
-        var suitsScores = [];
-        var suitsTimes = [];
-        var geomeanScore = 1.0;
-        for (var suit in this._suitsTimeValues) {
-            suitsResults[suit] = this._computeResults(this._suitsTimeValues[suit], 'runs/min');
-            suitsScores[suit] = (suitsResults[suit].mean / benchmarkClient.suitesCount).toFixed(2);
-            suitsTimes[suit] = suitsResults[suit].totalTime.toFixed(2);
-            console.log(suit + "," + suitsScores[suit] + ",Time(ms)," + suitsTimes[suit]);
-            geomeanScore *= suitsScores[suit];
-        }
-        geomeanScore = Math.pow(geomeanScore, 1.0/benchmarkClient.suitesCount);
+        var results = this._computeResults(this._measuredValuesList, this.displayUnit);
+        var suiteScores = results.suiteScores;
+        var suiteTimes = results.suiteTimes;
+        for (var suiteName in suiteScores)
+            console.log(suiteName + "," + suiteScores[suiteName].toFixed(2) + ",Time(ms)," + suiteTimes[suiteName].toFixed(2));
 
         running_end = performance.now();
         var running_time = running_end - running_start;
@@ -62,11 +53,10 @@ window.benchmarkClient = {
         if (results.formattedDelta)
             document.getElementById('confidence-number').textContent = '\u00b1 ' + results.formattedDelta;
 
-        this._populateDetailedResults(results.formattedValues, suitsScores, suitsTimes);
+        this._populateDetailedResults(results.formattedValues, suiteScores, suiteTimes);
         document.getElementById('results-with-statistics').textContent = results.formattedMeanAndDelta;
         document.getElementById('total-score-time').textContent = results.totalTime.toFixed(2);
         document.getElementById('total-running-time').textContent = running_time.toFixed(2);
-        document.getElementById('geomean-score').textContent = geomeanScore.toFixed(2);
 
         if (this.displayUnit == 'ms') {
             document.getElementById('show-summary').style.display = 'none';
@@ -74,12 +64,29 @@ window.benchmarkClient = {
         } else
             showResultsSummary();
     },
-    _computeResults: function (timeValues, displayUnit) {
+    _computeResults: function (measuredValuesList, displayUnit) {
         var suitesCount = this.suitesCount;
-        function totalTimeInDisplayUnit(time) {
+        var iterationCount = this.iterationCount;
+        function valueForUnit(measuredValues) {
             if (displayUnit == 'ms')
-                return time;
-            return computeScore(time);
+                return measuredValues.geomean;
+            return measuredValues.score;
+        }
+
+        function addSuiteScores(sumSuiteScores, measuredValues) {
+            for (var suiteName in measuredValues.tests) {
+                var sum = sumSuiteScores[suiteName] || 0.0;
+                sumSuiteScores[suiteName] = sum + measuredValues.tests[suiteName].score;
+            }
+            return sumSuiteScores;
+        }
+
+        function addSuiteTimes(sumSuiteTimes, measuredValues) {
+            for (var suiteName in measuredValues.tests) {
+                var sum = sumSuiteTimes[suiteName] || 0.0;
+                sumSuiteTimes[suiteName] = sum + measuredValues.tests[suiteName].total;
+            }
+            return sumSuiteTimes;
         }
 
         function sigFigFromPercentDelta(percentDelta) {
@@ -91,8 +98,15 @@ window.benchmarkClient = {
             return number.toPrecision(Math.max(nonDecimalDigitCount, Math.min(6, sigFig)));
         }
 
-        var totalTime = timeValues.reduce(function (a, b) { return a + b; }, 0);
-        var values = timeValues.map(totalTimeInDisplayUnit);
+        var sumSuiteScores = measuredValuesList.reduce(addSuiteScores, []);
+        var suiteScores = [];
+        for (var suiteName in sumSuiteScores)
+            suiteScores[suiteName] = sumSuiteScores[suiteName] / iterationCount;
+        var sumSuiteTimes = measuredValuesList.reduce(addSuiteTimes, []);
+
+        var totalTime = measuredValuesList.reduce(function (a, b) { return a + b.total; }, 0);
+        var values = measuredValuesList.map(valueForUnit);
+
         var sum = values.reduce(function (a, b) { return a + b; }, 0);
         var arithmeticMean = sum / values.length;
         var meanSigFig = 4;
@@ -112,13 +126,15 @@ window.benchmarkClient = {
 
         return {
             totalTime: totalTime,
-            formattedValues: timeValues.map(function (time) {
-                return toSigFigPrecision(totalTimeInDisplayUnit(time), 4) + ' ' + displayUnit;
+            formattedValues: values.map(function (value) {
+                return toSigFigPrecision(value, 4) + ' ' + displayUnit;
             }),
             mean: arithmeticMean,
             formattedMean: formattedMean,
             formattedDelta: formattedDelta,
             formattedMeanAndDelta: formattedMean + (formattedDelta ? ' \xb1 ' + formattedDelta + ' (' + formattedPercentDelta + ')' : ''),
+            suiteScores: suiteScores,
+            suiteTimes: sumSuiteTimes,
         };
     },
     _addFrameworksRow: function (table, name, cb) {
@@ -139,7 +155,7 @@ window.benchmarkClient = {
         row.appendChild(td);
         table.appendChild(row);
     },
-    _addSuitsScoresRow: function (table, suit, value, time) {
+    _addSuiteScoresRow: function (table, suit, value, time) {
         if (table.innerHTML == '') {
             var row = document.createElement('tr');
             var th = document.createElement('th');
@@ -208,14 +224,14 @@ window.benchmarkClient = {
         gaugeNeedleElement.style.setProperty('-ms-transform', needleRotationValue);
         gaugeNeedleElement.style.setProperty('transform', needleRotationValue);
     },
-    _populateDetailedResults: function (formattedValues, suitsScores, suitsTimes) {
+    _populateDetailedResults: function (formattedValues, suiteScores, suiteTimes) {
         var resultsTables = document.querySelectorAll('.results-table');
         resultsTables[0].innerHTML = '';
         for (var i = 0; i < formattedValues.length; i++)
             this._addDetailedResultsRow(resultsTables[0], i, formattedValues[i]);
         resultsTables[1].innerHTML = '';
-        for (var suit in suitsScores)
-            this._addSuitsScoresRow(resultsTables[1], suit, suitsScores[suit], suitsTimes[suit]);
+        for (var suit in suiteScores)
+            this._addSuiteScoresRow(resultsTables[1], suit, suiteScores[suit].toFixed(2), suiteTimes[suit].toFixed(2));
     },
     prepareUI: function () {
         this._prepareFrameworks();
@@ -295,17 +311,13 @@ function startBenchmark() {
     }
 
     var enabledSuites = Suites.filter(function (suite) { return !suite.disabled; });
-    var totalSubtestCount = enabledSuites.reduce(function (testsCount, suite) { return testsCount + suite.tests.length; }, 0);
-    benchmarkClient.testsCount = benchmarkClient.iterationCount * totalSubtestCount;
+    var totalSubtestsCount = enabledSuites.reduce(function (testsCount, suite) { return testsCount + suite.tests.length; }, 0);
+    benchmarkClient.stepCount = benchmarkClient.iterationCount * totalSubtestsCount;
     benchmarkClient.suitesCount = enabledSuites.length;
     var runner = new BenchmarkRunner(Suites, benchmarkClient);
     runner.runMultipleIterations(benchmarkClient.iterationCount);
 
     return true;
-}
-
-function computeScore(time) {
-    return 60 * 1000 * benchmarkClient.suitesCount / time;
 }
 
 function showSection(sectionIdentifier, pushState) {
