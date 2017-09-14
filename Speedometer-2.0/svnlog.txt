@@ -1,4 +1,19 @@
 ------------------------------------------------------------------------
+r221841 | commit-queue@webkit.org | 2017-09-11 08:59:19 +0800 (一, 11  9月 2017) | 12 lines
+
+Speedometer: Reduce duplication in react-redux test
+https://bugs.webkit.org/show_bug.cgi?id=176227
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-09-10
+Reviewed by Ryosuke Niwa.
+
+Updating react-scripts to a modern version avoids an issue where the generated bundle included the same `Object.assign`
+polyfill multiple times.
+
+* Speedometer/resources/todomvc/architecture-examples/react-redux/dist/*: Update dist per build instructions.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/package-lock.json: Update dependencies.
+* Speedometer/resources/todomvc/architecture-examples/react-redux/package.json: Update dependencies.
+------------------------------------------------------------------------
 r221659 | rniwa@webkit.org | 2017-09-06 10:37:41 +0800 (三, 06  9月 2017) | 47 lines
 
 Compute the final score using geometric mean in Speedometer 2.0
