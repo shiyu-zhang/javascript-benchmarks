@@ -1,4 +1,39 @@
 ------------------------------------------------------------------------
+r222488 | commit-queue@webkit.org | 2017-09-26 11:29:41 +0800 (二, 26  9月 2017) | 22 lines
+
+Speedometer: Add missing build scripts for Vue.js example
+https://bugs.webkit.org/show_bug.cgi?id=177359
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-09-25
+Reviewed by Ryosuke Niwa.
+
+This directory contains the build scripts needed to update `dist/*`. It had not been checked in because previously, all `build` directories were ignored by `.gitignore`. This directory is generated as part of `npm install -g vue-cli && vue init webpack some-project-name`.
+
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/build.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/check-versions.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/dev-client.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/dev-server.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/utils.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/vue-loader.conf.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/webpack.base.conf.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/webpack.dev.conf.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/webpack.prod.conf.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/build/webpack.test.conf.js: Added.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/dist/*: Updated per build instructions.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/package-lock.json: Added build dependencies per vue-cli.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/package.json: Added build dependencies per vue-cli.
+* Speedometer/resources/todomvc/architecture-examples/vuejs-cli/src/components/todo.css: Updated CSS to the latest version for #177358.
+------------------------------------------------------------------------
+r222466 | commit-queue@webkit.org | 2017-09-26 05:11:35 +0800 (二, 26  9月 2017) | 7 lines
+
+Speedometer: Fix typo
+https://bugs.webkit.org/show_bug.cgi?id=177425
+
+Patch by Mathias Bynens <mathias@qiwi.be> on 2017-09-25
+Reviewed by Ryosuke Niwa.
+
+* Speedometer/InteractiveRunner.html: Fix typo: “Arithemtic Mean” → “Arithmetic Mean”.
+------------------------------------------------------------------------
 r221841 | commit-queue@webkit.org | 2017-09-11 08:59:19 +0800 (一, 11  9月 2017) | 12 lines
 
 Speedometer: Reduce duplication in react-redux test
