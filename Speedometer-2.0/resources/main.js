@@ -46,7 +46,8 @@ window.benchmarkClient = {
             document.getElementById('confidence-number').textContent = '\u00b1 ' + results.formattedDelta;
 
         this._populateDetailedResults(results.formattedValues, suiteScores, suiteTimes);
-        document.getElementById('results-with-statistics').textContent = results.formattedMeanAndDelta;
+        document.getElementById('results-with-statistics').textContent = results.am_formattedMeanAndDelta;
+        document.getElementById('geomean-score').textContent = results.formattedMeanAndDelta;
         document.getElementById('total-score-time').textContent = results.totalTime.toFixed(2);
         document.getElementById('total-running-time').textContent = running_time.toFixed(2);
 
@@ -63,6 +64,12 @@ window.benchmarkClient = {
             if (displayUnit == 'ms')
                 return measuredValues.geomean;
             return measuredValues.score;
+        }
+
+        function totalTimeInDisplayUnit(measuredValues) {
+            if (displayUnit == 'ms')
+                return measuredValues.total;
+            return computeScore(measuredValues.total);
         }
 
         function addSuiteScores(sumSuiteScores, measuredValues) {
@@ -90,6 +97,26 @@ window.benchmarkClient = {
             return number.toPrecision(Math.max(nonDecimalDigitCount, Math.min(6, sigFig)));
         }
 
+        // Compute arithmetic mean
+        var am_values = measuredValuesList.map(totalTimeInDisplayUnit);
+        var am_sum = am_values.reduce(function (a, b) { return a + b; }, 0);
+        var am_arithmeticMean = am_sum / am_values.length;
+        var am_meanSigFig = 4;
+        var am_formattedDelta;
+        var am_formattedPercentDelta;
+        if (window.Statistics) {
+            var am_delta = Statistics.confidenceIntervalDelta(0.95, am_values.length, am_sum, Statistics.squareSum(am_values));
+            if (!isNaN(am_delta)) {
+                var am_percentDelta = am_delta * 100 / am_arithmeticMean;
+                am_meanSigFig = sigFigFromPercentDelta(am_percentDelta);
+                am_formattedDelta = toSigFigPrecision(am_delta, 2);
+                am_formattedPercentDelta = toSigFigPrecision(am_percentDelta, 2) + '%';
+            }
+        }
+
+        var am_formattedMean = toSigFigPrecision(am_arithmeticMean, Math.max(am_meanSigFig, 3));
+
+        //Compute sub-score and geometric mean
         var sumSuiteScores = measuredValuesList.reduce(addSuiteScores, []);
         var suiteScores = [];
         for (var suiteName in sumSuiteScores)
@@ -127,6 +154,7 @@ window.benchmarkClient = {
             formattedMeanAndDelta: formattedMean + (formattedDelta ? ' \xb1 ' + formattedDelta + ' (' + formattedPercentDelta + ')' : ''),
             suiteScores: suiteScores,
             suiteTimes: sumSuiteTimes,
+            am_formattedMeanAndDelta: am_formattedMean + (am_formattedDelta ? ' \xb1 ' + am_formattedDelta + ' (' + am_formattedPercentDelta + ')' : ''),
         };
     },
     _addFrameworksRow: function (table, name, cb) {
@@ -310,6 +338,10 @@ function startBenchmark() {
     runner.runMultipleIterations(benchmarkClient.iterationCount);
 
     return true;
+}
+
+function computeScore(time) {
+    return 60 * 1000 * benchmarkClient.suitesCount / time;
 }
 
 function showSection(sectionIdentifier, pushState) {
