@@ -5,8 +5,9 @@ define([
     'flight/lib/component',
     './with_filters',
     'text!templates/stats.html',
-    'app/utils'
-], function (defineComponent, withFilters, statsTmpl, utils) {
+    'app/utils',
+    'flight/lib/utils'
+], function (defineComponent, withFilters, statsTmpl, utils, libUtils) {
     function stats() {
         var template = utils.tmpl(statsTmpl);
 
@@ -28,7 +29,7 @@ define([
 
         this.after('initialize', function () {
             this.$node.hide();
-            this.on(document, 'dataStatsCounted', this.render);
+            this.on(document, 'dataStatsCounted', libUtils.debounce(this.render, 0));
             this.on('click', { 'clearCompletedSelector': this.clearCompleted });
         });
     }
