@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r226694 | rniwa@webkit.org | 2018-01-10 12:51:09 +0800 (三, 10  1月 2018) | 9 lines
+
+Speedometer 2.0: Update the About page.
+https://bugs.webkit.org/show_bug.cgi?id=175918
+
+Reviewed by Keith Miller.
+
+Updated the about page for Speedometer 2.0.
+
+* Speedometer/index.html:
+
+------------------------------------------------------------------------
 r222534 | commit-queue@webkit.org | 2017-09-27 07:48:14 +0800 (三, 27  9月 2017) | 43 lines
 
 Speedometer: ensure all TodoMVC tests use the complete latest CSS
