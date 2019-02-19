@@ -56,13 +56,30 @@ function makeBenchmarkRunner(sources, benchmarkConstructor, numIterations = 200)
     }
 }
 
+var benchmarks = {
+    "air"       : "air_benchmark.js",
+    "basic"     : "basic_benchmark.js",
+    "babylon"   : "babylon_benchmark.js",
+    "ml"        : "ml_benchmark.js"
+};
+
 load("driver.js");
 load("results.js");
 load("stats.js");
-load("air_benchmark.js");
-load("basic_benchmark.js");
-load("babylon_benchmark.js");
-load("ml_benchmark.js");
+
+var target_benchmarks = ["air", "basic", "babylon", "ml"];
+
+if (arguments !== null && arguments.length != 0) {
+    target_benchmarks.length = 0;
+    for (let benchmark of arguments) {
+        target_benchmarks.push(benchmark);
+    }
+}
+
+for (let benchmark of target_benchmarks) {
+    load(benchmarks[benchmark]);
+}
+
 load("glue.js");
 
 driver.start(6);

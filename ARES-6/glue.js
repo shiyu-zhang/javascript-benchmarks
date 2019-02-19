@@ -38,8 +38,21 @@ function reportResult(...args) {
     driver.reportResult(...args);
 }
 
-driver.addBenchmark(AirBenchmarkRunner);
-driver.addBenchmark(BasicBenchmarkRunner);
-driver.addBenchmark(BabylonBenchmarkRunner);
-driver.addBenchmark(MLBenchmarkRunner);
+for (let benchmark of target_benchmarks) {
+    switch(benchmark) {
+        case "air":
+            driver.addBenchmark(AirBenchmarkRunner); 
+            break;
+        case "basic": 
+            driver.addBenchmark(BasicBenchmarkRunner);
+            break;
+        case "babylon":
+            driver.addBenchmark(BabylonBenchmarkRunner);
+            break;
+        case "ml":
+            driver.addBenchmark(MLBenchmarkRunner);
+            break;
+    }
+}
+
 driver.readyTrigger();
