@@ -38,6 +38,13 @@ function reportResult(...args) {
     driver.reportResult(...args);
 }
 
+if (typeof target_benchmarks === "undefined" || 
+    target_benchmarks == null || target_benchmarks.length ==0) {
+    var target_benchmarks = ["air", "basic", "babylon", "ml"];
+}
+
+// target_benchmarks = ["babylon"];
+
 for (let benchmark of target_benchmarks) {
     switch(benchmark) {
         case "air":
