@@ -278,7 +278,7 @@ BenchmarkRunner.prototype._finalize = function () {
         var values = [];
         for (var suiteName in this._measuredValues.tests) {
             var suiteTotal = this._measuredValues.tests[suiteName].total;
-            this._measuredValues.tests[suiteName].score = 60 * 1000 / suiteTotal;
+            this._measuredValues.tests[suiteName].score = global_operationCount * 60 * 1000 / suiteTotal;
             product *= suiteTotal;
             values.push(suiteTotal);
         }
@@ -291,7 +291,7 @@ BenchmarkRunner.prototype._finalize = function () {
         this._measuredValues.total = total;
         this._measuredValues.mean = total / values.length;
         this._measuredValues.geomean = geomean;
-        this._measuredValues.score = 60 * 1000 / geomean / correctionFactor;
+        this._measuredValues.score = global_operationCount * 60 * 1000 / geomean / correctionFactor;
         this._client.didRunSuites(this._measuredValues);
     }
 
