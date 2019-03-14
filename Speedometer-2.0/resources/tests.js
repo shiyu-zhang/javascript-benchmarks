@@ -1,6 +1,7 @@
 var numberOfItemsToAdd = 100;
 var Suites = [];
 var ENTER_KEY_CODE = 13;
+var global_operationCount = 20;
 
 var triggerEnter = function (element, type) {
     var event = document.createEvent('Events');
@@ -9,6 +10,34 @@ var triggerEnter = function (element, type) {
     event.which = ENTER_KEY_CODE;
     event.key = 'ENTER';
     element.dispatchEvent(event);
+}
+
+var prepareTests = function (Adding, Completing, Deleting) {
+	for (let j = 0; j < global_operationCount; j++) {
+		Suites[Suites.length - 1].tests.push(new BenchmarkTestStep(j + 'Adding' + numberOfItemsToAdd + 'Items', Adding));
+		Suites[Suites.length - 1].tests.push(new BenchmarkTestStep(j + 'CompletingAllItems', Completing));
+		Suites[Suites.length - 1].tests.push(new BenchmarkTestStep(j + 'DeletingItems', Deleting));
+	}
+}
+
+var VanillaAdding = function (newTodo, contentWindow, contentDocument) {
+    for (var i = 0; i < numberOfItemsToAdd; i++) {
+        newTodo.value = 'Something to do ' + i;
+        newTodo.dispatchEvent(new Event('change'));
+        triggerEnter(newTodo, 'keypress');
+    }
+}
+
+var VanillaCompleting = function (newTodo, contentWindow, contentDocument) {
+    var checkboxes = contentDocument.querySelectorAll('.toggle');
+    for (var i = 0; i < checkboxes.length; i++)
+        checkboxes[i].click();
+}
+
+var VanillaDeleting = function (newTodo, contentWindow, contentDocument) {
+    var deleteButtons = contentDocument.querySelectorAll('.destroy');
+    for (var i = 0; i < deleteButtons.length; i++)
+        deleteButtons[i].click();
 }
 
 Suites.push({
@@ -21,25 +50,10 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(new Event('change'));
-                triggerEnter(newTodo, 'keypress');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(VanillaAdding, VanillaCompleting, VanillaDeleting);
 
 Suites.push({
     name: 'Vanilla-ES2015-TodoMVC',
@@ -51,25 +65,10 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(new Event('change'));
-                triggerEnter(newTodo, 'keypress');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(VanillaAdding, VanillaCompleting, VanillaDeleting);
 
 Suites.push({
     name: 'Vanilla-ES2015-Babel-Webpack-TodoMVC',
@@ -81,25 +80,33 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(new Event('change'));
-                triggerEnter(newTodo, 'keypress');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(VanillaAdding, VanillaCompleting, VanillaDeleting);
+
+var ReactAdding = function (newTodo, contentWindow, contentDocument) {
+    for (var i = 0; i < numberOfItemsToAdd; i++) {
+        newTodo.value = 'Something to do ' + i;
+        newTodo.dispatchEvent(new Event('input', {
+          bubbles: true,
+          cancelable: true
+        }));
+        triggerEnter(newTodo, 'keydown');
+    }
+}
+
+var ReactCompleting = function (newTodo, contentWindow, contentDocument) {
+    var checkboxes = contentDocument.querySelectorAll('.toggle');
+    for (var i = 0; i < checkboxes.length; i++)
+        checkboxes[i].click();
+}
+
+var ReactDeleting = function (newTodo, contentWindow, contentDocument) {
+    var deleteButtons = contentDocument.querySelectorAll('.destroy');
+    for (var i = 0; i < deleteButtons.length; i++)
+        deleteButtons[i].click();
+}
 
 Suites.push({
     name: 'React-TodoMVC',
@@ -112,28 +119,29 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
+    ]
+});
+
+prepareTests(ReactAdding, ReactCompleting, ReactDeleting);
+
+var ReactReduxAdding = function (newTodo, contentWindow, contentDocument) {
             for (var i = 0; i < numberOfItemsToAdd; i++) {
                 newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(new Event('input', {
-                  bubbles: true,
-                  cancelable: true
-                }));
                 triggerEnter(newTodo, 'keydown');
             }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (newTodo, contentWindow, contentDocument) {
+}
+
+var ReactReduxCompleting = function (newTodo, contentWindow, contentDocument) {
             var checkboxes = contentDocument.querySelectorAll('.toggle');
             for (var i = 0; i < checkboxes.length; i++)
                 checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingAllItems', function (newTodo, contentWindow, contentDocument) {
+}
+
+var ReactReduxDeleting = function (newTodo, contentWindow, contentDocument) {
             var deleteButtons = contentDocument.querySelectorAll('.destroy');
             for (var i = 0; i < deleteButtons.length; i++)
                 deleteButtons[i].click();
-        }),
-    ]
-});
+}
 
 Suites.push({
     name: 'React-Redux-TodoMVC',
@@ -145,24 +153,29 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                triggerEnter(newTodo, 'keydown');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(ReactReduxAdding, ReactReduxCompleting, ReactReduxDeleting);
+
+function EmberJSAdding(newTodo, contentWindow, contentDocument) {
+	  for (var i = 0; i < numberOfItemsToAdd; i++) {
+	      newTodo.value = 'Something to do ' + i;
+	      triggerEnter(newTodo, 'keydown');
+	  }
+}
+
+function EmberJSCompleting(params, contentWindow, contentDocument) {
+    var checkboxes = contentDocument.querySelectorAll('.toggle');
+    for (var i = 0; i < checkboxes.length; i++)
+        checkboxes[i].click();
+}
+
+function EmberJSDeleting(params, contentWindow, contentDocument) {
+    var deleteButtons = contentDocument.querySelectorAll('.destroy');
+    for (var i = 0; i < deleteButtons.length; i++)
+        deleteButtons[i].click();
+}
 
 Suites.push({
     name: 'EmberJS-TodoMVC',
@@ -174,24 +187,10 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                triggerEnter(newTodo, 'keydown');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(EmberJSAdding, EmberJSCompleting, EmberJSDeleting);
 
 Suites.push({
     name: 'EmberJS-Debug-TodoMVC',
@@ -203,24 +202,29 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                triggerEnter(newTodo, 'keydown');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(EmberJSAdding, EmberJSCompleting, EmberJSDeleting);
+
+function BackboneJSAdding(newTodo, contentWindow, contentDocument) {
+            for (var i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.value = 'Something to do ' + i;
+                triggerEnter(newTodo, 'keypress');
+            }
+}
+
+function BackboneJSCompleting(params, contentWindow, contentDocument) {
+            var checkboxes = contentDocument.querySelectorAll('.toggle');
+            for (var i = 0; i < numberOfItemsToAdd; i++)
+                checkboxes[i].click();
+}
+
+function BackboneJSDeleting(params, contentWindow, contentDocument) {
+            var deleteButtons = contentDocument.querySelectorAll('.destroy');
+            for (var i = 0; i < numberOfItemsToAdd; i++)
+                deleteButtons[i].click();
+}
 
 Suites.push({
     name: 'BackboneJS-TodoMVC',
@@ -234,24 +238,33 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                triggerEnter(newTodo, 'keypress');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < numberOfItemsToAdd; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < numberOfItemsToAdd; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(BackboneJSAdding, BackboneJSCompleting, BackboneJSDeleting);
+
+function AngularJSAdding(newTodo, contentWindow, contentDocument) {
+            var submitEvent = document.createEvent('Event');
+            submitEvent.initEvent('submit', true, true);
+            var inputEvent = document.createEvent('Event');
+            inputEvent.initEvent('input', true, true);
+            for (var i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.value = 'Something to do ' + i;
+                newTodo.dispatchEvent(inputEvent);
+                newTodo.form.dispatchEvent(submitEvent);
+            }
+}
+
+function AngularJSCompleting(params, contentWindow, contentDocument) {
+            var checkboxes = contentDocument.querySelectorAll('.toggle');
+            for (var i = 0; i < checkboxes.length; i++)
+                checkboxes[i].click();
+}
+
+function AngularJSDeleting(params, contentWindow, contentDocument) {
+            for (var i = 0; i < numberOfItemsToAdd; i++)
+                contentDocument.querySelector('.destroy').click();
+}
 
 Suites.push({
     name: 'AngularJS-TodoMVC',
@@ -263,28 +276,33 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            var submitEvent = document.createEvent('Event');
-            submitEvent.initEvent('submit', true, true);
-            var inputEvent = document.createEvent('Event');
-            inputEvent.initEvent('input', true, true);
+    ]
+});
+
+prepareTests(AngularJSAdding, AngularJSCompleting, AngularJSDeleting);
+
+function Angular2TypeScriptAdding(newTodo, contentWindow, contentDocument) {
             for (var i = 0; i < numberOfItemsToAdd; i++) {
                 newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(inputEvent);
-                newTodo.form.dispatchEvent(submitEvent);
+                newTodo.dispatchEvent(new Event('input', {
+                  bubbles: true,
+                  cancelable: true
+                }));
+                triggerEnter(newTodo, 'keyup');
             }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (newTodo, contentWindow, contentDocument) {
+}
+
+function Angular2TypeScriptCompleting(params, contentWindow, contentDocument) {
             var checkboxes = contentDocument.querySelectorAll('.toggle');
             for (var i = 0; i < checkboxes.length; i++)
                 checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++)
-                contentDocument.querySelector('.destroy').click();
-        }),
-    ]
-});
+}
+
+function Angular2TypeScriptDeleting(params, contentWindow, contentDocument) {
+            var deleteButtons = contentDocument.querySelectorAll('.destroy');
+            for (var i = 0; i < deleteButtons.length; i++)
+                deleteButtons[i].click();
+}
 
 Suites.push({
     name: 'Angular2-TypeScript-TodoMVC',
@@ -296,7 +314,12 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
+    ]
+});
+
+prepareTests(Angular2TypeScriptAdding, Angular2TypeScriptCompleting, Angular2TypeScriptDeleting);
+
+function VueJSAdding(newTodo, contentWindow, contentDocument) {
             for (var i = 0; i < numberOfItemsToAdd; i++) {
                 newTodo.value = 'Something to do ' + i;
                 newTodo.dispatchEvent(new Event('input', {
@@ -305,19 +328,19 @@ Suites.push({
                 }));
                 triggerEnter(newTodo, 'keyup');
             }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
+}
+
+function VueJSCompleting(params, contentWindow, contentDocument) {
             var checkboxes = contentDocument.querySelectorAll('.toggle');
             for (var i = 0; i < checkboxes.length; i++)
                 checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
+}
+
+function VueJSDeleting(params, contentWindow, contentDocument) {
             var deleteButtons = contentDocument.querySelectorAll('.destroy');
             for (var i = 0; i < deleteButtons.length; i++)
                 deleteButtons[i].click();
-        }),
-    ]
-});
+}
 
 Suites.push({
     name: 'VueJS-TodoMVC',
@@ -329,28 +352,28 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(new Event('input', {
-                  bubbles: true,
-                  cancelable: true
-                }));
-                triggerEnter(newTodo, 'keyup');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(VueJSAdding, VueJSCompleting, VueJSDeleting);
+
+function jQueryAdding(newTodo, contentWindow, contentDocument) {
+            for (var i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.value = 'Something to do ' + i;
+                triggerEnter(newTodo, 'keyup');
+            }
+}
+
+function jQueryCompleting(params, contentWindow, contentDocument) {
+            var checkboxes = contentDocument.getElementsByClassName('toggle');
+            for (var i = 0; i < checkboxes.length; i++)
+                checkboxes[i].click();
+}
+
+function jQueryDeleting(params, contentWindow, contentDocument) {
+            for (var i = 0; i < numberOfItemsToAdd; i++)
+                contentDocument.querySelector('.destroy').click();
+}
 
 Suites.push({
     name: 'jQuery-TodoMVC',
@@ -363,23 +386,29 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                triggerEnter(newTodo, 'keyup');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.getElementsByClassName('toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingAllItems', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++)
-                contentDocument.querySelector('.destroy').click();
-        }),
     ]
 })
+
+prepareTests(jQueryAdding, jQueryCompleting, jQueryDeleting);
+
+function PreactAdding(newTodo, contentWindow, contentDocument) {
+            for (var i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.value = 'Something to do ' + i;
+                triggerEnter(newTodo, 'keydown');
+            }
+}
+
+function PreactCompleting(params, contentWindow, contentDocument) {
+            var checkboxes = contentDocument.querySelectorAll('.toggle');
+            for (var i = 0; i < checkboxes.length; i++)
+                checkboxes[i].click();
+}
+
+function PreactDeleting(params, contentWindow, contentDocument) {
+            var deleteButtons = contentDocument.querySelectorAll('.destroy');
+            for (var i = 0; i < deleteButtons.length; i++)
+                deleteButtons[i].click();
+}
 
 Suites.push({
     name: 'Preact-TodoMVC',
@@ -391,24 +420,33 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
+    ]
+});
+
+prepareTests(PreactAdding, PreactCompleting, PreactDeleting);
+
+function InfernoAdding(newTodo, contentWindow, contentDocument) {
             for (var i = 0; i < numberOfItemsToAdd; i++) {
                 newTodo.value = 'Something to do ' + i;
+                newTodo.dispatchEvent(new Event('change', {
+                  bubbles: true,
+                  cancelable: true
+                }));
                 triggerEnter(newTodo, 'keydown');
             }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
+}
+
+function InfernoCompleting(params, contentWindow, contentDocument) {
             var checkboxes = contentDocument.querySelectorAll('.toggle');
             for (var i = 0; i < checkboxes.length; i++)
                 checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
+}
+
+function InfernoDeleting(params, contentWindow, contentDocument) {
             var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
-    ]
-});
+            for (var i = 0; i < numberOfItemsToAdd; i++)
+                contentDocument.querySelector('.destroy').click();
+}
 
 Suites.push({
     name: 'Inferno-TodoMVC',
@@ -420,28 +458,10 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                newTodo.dispatchEvent(new Event('change', {
-                  bubbles: true,
-                  cancelable: true
-                }));
-                triggerEnter(newTodo, 'keydown');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < numberOfItemsToAdd; i++)
-                contentDocument.querySelector('.destroy').click();
-        }),
     ]
 });
+
+prepareTests(InfernoAdding, InfernoCompleting, InfernoDeleting);
 
 function processElmWorkQueue(contentWindow)
 {
@@ -455,17 +475,7 @@ function processElmWorkQueue(contentWindow)
     contentWindow.rAFCallbackList = [];
 }
 
-Suites.push({
-    name: 'Elm-TodoMVC',
-    url: 'todomvc/functional-prog-examples/elm/index.html',
-    prepare: function (runner, contentWindow, contentDocument) {
-        return runner.waitForElement('.new-todo').then(function (element) {
-            element.focus();
-            return element;
-        });
-    },
-    tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
+function ElmAdding(newTodo, contentWindow, contentDocument) {
             for (var i = 0; i < numberOfItemsToAdd; i++) {
                 newTodo.value = 'Something to do ' + i;
                 newTodo.dispatchEvent(new Event('input', {
@@ -476,22 +486,56 @@ Suites.push({
                 triggerEnter(newTodo, 'keydown');
                 processElmWorkQueue(contentWindow);
             }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
+}
+
+function ElmCompleting(params, contentWindow, contentDocument) {
             var checkboxes = contentDocument.querySelectorAll('.toggle');
             for (var i = 0; i < checkboxes.length; i++) {
                 checkboxes[i].click();
                 processElmWorkQueue(contentWindow);
             }
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
+}
+
+function ElmDeleting(params, contentWindow, contentDocument) {
             for (var i = 0; i < numberOfItemsToAdd; i++) {
                 contentDocument.querySelector('.destroy').click();
                 processElmWorkQueue(contentWindow);
             }
-        }),
+}
+
+Suites.push({
+    name: 'Elm-TodoMVC',
+    url: 'todomvc/functional-prog-examples/elm/index.html',
+    prepare: function (runner, contentWindow, contentDocument) {
+        return runner.waitForElement('.new-todo').then(function (element) {
+            element.focus();
+            return element;
+        });
+    },
+    tests: [
     ]
 });
+
+prepareTests(ElmAdding, ElmCompleting, ElmDeleting);
+
+function FlightAdding(newTodo, contentWindow, contentDocument) {
+            for (var i = 0; i < numberOfItemsToAdd; i++) {
+                newTodo.value = 'Something to do ' + i;
+                triggerEnter(newTodo, 'keydown');
+            }
+}
+
+function FlightCompleting(params, contentWindow, contentDocument) {
+            var checkboxes = contentDocument.querySelectorAll('.toggle');
+            for (var i = 0; i < checkboxes.length; i++)
+                checkboxes[i].click();
+}
+
+function FlightDeleting(params, contentWindow, contentDocument) {
+            var deleteButtons = contentDocument.querySelectorAll('.destroy');
+            for (var i = 0; i < deleteButtons.length; i++)
+                deleteButtons[i].click();
+}
 
 Suites.push({
     name: 'Flight-TodoMVC',
@@ -504,24 +548,10 @@ Suites.push({
         });
     },
     tests: [
-        new BenchmarkTestStep('Adding' + numberOfItemsToAdd + 'Items', function (newTodo, contentWindow, contentDocument) {
-            for (var i = 0; i < numberOfItemsToAdd; i++) {
-                newTodo.value = 'Something to do ' + i;
-                triggerEnter(newTodo, 'keydown');
-            }
-        }),
-        new BenchmarkTestStep('CompletingAllItems', function (params, contentWindow, contentDocument) {
-            var checkboxes = contentDocument.querySelectorAll('.toggle');
-            for (var i = 0; i < checkboxes.length; i++)
-                checkboxes[i].click();
-        }),
-        new BenchmarkTestStep('DeletingItems', function (params, contentWindow, contentDocument) {
-            var deleteButtons = contentDocument.querySelectorAll('.destroy');
-            for (var i = 0; i < deleteButtons.length; i++)
-                deleteButtons[i].click();
-        }),
     ]
 });
+
+prepareTests(FlightAdding, FlightCompleting, FlightDeleting);
 
 var actionCount = 50;
 Suites.push({
